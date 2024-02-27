@@ -10,6 +10,7 @@ use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::query::{query_balance, query_token_info, query_nft_num_token, query_max_nft_supply};
 use crate::state::{TokenInfo, BALANCES, TOKEN_INFO, NFT_COUNT, MAX_NFT_SUPPLY};
+use crate::execute::execute_transfer;
 
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -27,9 +28,9 @@ pub fn instantiate(
     // check valid token info
     msg.validate()?;
     // create initial accounts
-    let total_supply = create_accounts(&mut deps, &msg.initial_balances)?;
-    let admin = deps.api.addr_validate(&msg.admin)?;
     let units = Uint128::from(10u128.pow(u32::from(msg.decimals)));
+    let total_supply = create_accounts(&mut deps, &msg.initial_balances, units)?;
+    let admin = deps.api.addr_validate(&msg.admin)?;
 
     let data = TokenInfo {
         name: msg.name,
@@ -49,13 +50,15 @@ pub fn instantiate(
 pub fn create_accounts(
     deps: &mut DepsMut,
     accounts: &[Cw20Coin],
+    units: Uint128
 ) -> Result<Uint128, ContractError> {
     validate_accounts(accounts)?;
 
     let mut total_supply = Uint128::zero();
     for account in accounts {
         let address = deps.api.addr_validate(&account.address)?;
-        BALANCES.save(deps.storage, &address, &account.amount)?;
+        let ammout = account.amount.checked_mul(units)?;
+        BALANCES.save(deps.storage, &address, &ammout)?;
         total_supply += account.amount;
     }
 
@@ -82,7 +85,9 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    Ok(Response::default())
+    match msg {
+        ExecuteMsg::Transfer { recipient, amount } => execute_transfer(deps, env, info, recipient, amount)
+    }
 }
 
 // query contract

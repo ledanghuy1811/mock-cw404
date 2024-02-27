@@ -1,9 +1,9 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{StdError, StdResult};
+use cosmwasm_std::{StdError, StdResult, Uint128};
 use cw20::{BalanceResponse, Cw20Coin};
 use cw721::NumTokensResponse;
 
-use cw404_package::{TokenInfoResponse, MaxNftSupplyRespone};
+use cw404_package::{MaxNftSupplyRespone, TokenInfoResponse};
 
 // instantiate msg
 #[cw_serde]
@@ -58,7 +58,11 @@ impl InstantiateMsg {
 
 // execute msg
 #[cw_serde]
-pub enum ExecuteMsg {}
+pub enum ExecuteMsg {
+    // Transfer is a base message to move tokens to another account without triggering actions
+    // transfer token also nft
+    Transfer { recipient: String, amount: Uint128 },
+}
 
 // query msg
 #[cw_serde]
@@ -68,17 +72,14 @@ pub enum QueryMsg {
     // Returns the current balance of the given address, 0 if unset.
     #[returns(BalanceResponse)]
     Balance { address: String },
-
     // Returns metadata on the contract - name, decimals, supply, etc.
     #[returns(TokenInfoResponse)]
     TokenInfo {},
-
 
     /// Cw721 query
     // Total number of tokens issued
     #[returns(NumTokensResponse)]
     NftNumTokens {},
-
     // Max NFT supply
     #[returns(MaxNftSupplyRespone)]
     MaxNftSupply {},

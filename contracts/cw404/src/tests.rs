@@ -6,7 +6,7 @@ use cw_multi_test::{App, ContractWrapper, Executor};
 use cw404_package::{MaxNftSupplyRespone, TokenInfoResponse};
 
 use crate::contract::{execute, instantiate, query};
-use crate::msg::{InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 pub struct InstantiateResponse {
     pub app: App,
@@ -110,6 +110,41 @@ pub fn initial_max_nft() {
         resp,
         MaxNftSupplyRespone {
             max: Uint128::from(10000u128)
+        }
+    );
+}
+
+#[test]
+pub fn tranfer_mock_test() {
+    let mut instantiate_resp: InstantiateResponse = intantisate_contract(Uint128::from(10000u128));
+
+    instantiate_resp
+        .app
+        .execute_contract(
+            Addr::unchecked("admin"),
+            instantiate_resp.address.clone(),
+            &ExecuteMsg::Transfer {
+                recipient: "huy".to_string(),
+                amount: Uint128::from(100u128),
+            },
+            &[],
+        )
+        .unwrap();
+
+    let resp: BalanceResponse = instantiate_resp
+        .app
+        .wrap()
+        .query_wasm_smart(
+            instantiate_resp.address,
+            &QueryMsg::Balance {
+                address: "admin".to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        resp,
+        BalanceResponse {
+            balance: Uint128::from(9900u128)
         }
     );
 }
