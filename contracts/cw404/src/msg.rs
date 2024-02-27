@@ -1,8 +1,9 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{StdError, StdResult};
 use cw20::{BalanceResponse, Cw20Coin};
+use cw721::NumTokensResponse;
 
-use cw404_package::TokenInfoResponse;
+use cw404_package::{TokenInfoResponse, MaxNftSupplyRespone};
 
 // instantiate msg
 #[cw_serde]
@@ -63,6 +64,7 @@ pub enum ExecuteMsg {}
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
+    /// Cw20 query
     // Returns the current balance of the given address, 0 if unset.
     #[returns(BalanceResponse)]
     Balance { address: String },
@@ -70,4 +72,14 @@ pub enum QueryMsg {
     // Returns metadata on the contract - name, decimals, supply, etc.
     #[returns(TokenInfoResponse)]
     TokenInfo {},
+
+
+    /// Cw721 query
+    // Total number of tokens issued
+    #[returns(NumTokensResponse)]
+    NftNumTokens {},
+
+    // Max NFT supply
+    #[returns(MaxNftSupplyRespone)]
+    MaxNftSupply {},
 }

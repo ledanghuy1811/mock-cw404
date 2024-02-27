@@ -27,7 +27,7 @@ pub const ALLOWANCES: Map<(&Addr, &Addr), AllowanceResponse> = Map::new("allowan
 
 // cw721 info
 pub const MAX_NFT_SUPPLY: Item<Uint128> = Item::new("max_nft_supply");
-pub const NFT_COUNT: Item<Uint128> = Item::new("nft_count");
+pub const NFT_COUNT: Item<u64> = Item::new("nft_count");
 // Stored as (granter, operator) giving operator full control over granter's account
 pub const OPERATORS: Map<(&Addr, &Addr), Expiration> = Map::new("operator");
 const INDEXES: NftIndexes = NftIndexes {

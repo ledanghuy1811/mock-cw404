@@ -1,8 +1,9 @@
 use cosmwasm_std::{Addr, Uint128};
 use cw20::{BalanceResponse, Cw20Coin};
+use cw721::NumTokensResponse;
 use cw_multi_test::{App, ContractWrapper, Executor};
 
-use cw404_package::TokenInfoResponse;
+use cw404_package::{MaxNftSupplyRespone, TokenInfoResponse};
 
 use crate::contract::{execute, instantiate, query};
 use crate::msg::{InstantiateMsg, QueryMsg};
@@ -80,6 +81,35 @@ pub fn initial_token_info() {
             total_supply: Uint128::from(10000u128),
             admin: Addr::unchecked("admin"),
             units: Uint128::from(10u128.pow(6))
+        }
+    );
+}
+
+#[test]
+pub fn initial_nft_count_to_eq_zero() {
+    let instantiate_resp: InstantiateResponse = intantisate_contract(Uint128::from(10000u128));
+
+    let resp: NumTokensResponse = instantiate_resp
+        .app
+        .wrap()
+        .query_wasm_smart(instantiate_resp.address, &QueryMsg::NftNumTokens {})
+        .unwrap();
+    assert_eq!(resp, NumTokensResponse { count: 0 });
+}
+
+#[test]
+pub fn initial_max_nft() {
+    let instantiate_resp: InstantiateResponse = intantisate_contract(Uint128::from(10000u128));
+
+    let resp: MaxNftSupplyRespone = instantiate_resp
+        .app
+        .wrap()
+        .query_wasm_smart(instantiate_resp.address, &QueryMsg::MaxNftSupply {})
+        .unwrap();
+    assert_eq!(
+        resp,
+        MaxNftSupplyRespone {
+            max: Uint128::from(10000u128)
         }
     );
 }

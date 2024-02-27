@@ -8,8 +8,8 @@ use cw20::Cw20Coin;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::query::{query_balance, query_token_info};
-use crate::state::{TokenInfo, BALANCES, TOKEN_INFO};
+use crate::query::{query_balance, query_token_info, query_nft_num_token, query_max_nft_supply};
+use crate::state::{TokenInfo, BALANCES, TOKEN_INFO, NFT_COUNT, MAX_NFT_SUPPLY};
 
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -40,6 +40,8 @@ pub fn instantiate(
         units,
     };
     TOKEN_INFO.save(deps.storage, &data)?;
+    MAX_NFT_SUPPLY.save(deps.storage, &total_supply)?;
+    NFT_COUNT.save(deps.storage, &0)?;
 
     Ok(Response::default())
 }
@@ -87,7 +89,12 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
+        // cw20 query
         QueryMsg::Balance { address } => to_json_binary(&query_balance(deps, address)?),
         QueryMsg::TokenInfo {} => to_json_binary(&query_token_info(deps)?),
+
+        // cw721 query
+        QueryMsg::NftNumTokens {  } => to_json_binary(&query_nft_num_token(deps)?),
+        QueryMsg::MaxNftSupply {  } => to_json_binary(&query_max_nft_supply(deps)?),
     }
 }

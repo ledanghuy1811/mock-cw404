@@ -10,3 +10,8 @@ pub struct TokenInfoResponse {
     pub admin: Addr,
     pub units: Uint128
 }
+
+#[cw_serde]
+pub struct MaxNftSupplyRespone {
+    pub max: Uint128
+}
