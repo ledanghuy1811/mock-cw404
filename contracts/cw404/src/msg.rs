@@ -1,7 +1,10 @@
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{StdError, StdResult};
-use cw20::Cw20Coin;
+use cw20::{BalanceResponse, Cw20Coin};
 
+use cw404_package::TokenInfoResponse;
+
+// instantiate msg
 #[cw_serde]
 pub struct InstantiateMsg {
     pub name: String,
@@ -50,4 +53,21 @@ impl InstantiateMsg {
         }
         true
     }
+}
+
+// execute msg
+#[cw_serde]
+pub enum ExecuteMsg {}
+
+// query msg
+#[cw_serde]
+#[derive(QueryResponses)]
+pub enum QueryMsg {
+    // Returns the current balance of the given address, 0 if unset.
+    #[returns(BalanceResponse)]
+    Balance { address: String },
+
+    // Returns metadata on the contract - name, decimals, supply, etc.
+    #[returns(TokenInfoResponse)]
+    TokenInfo {},
 }
