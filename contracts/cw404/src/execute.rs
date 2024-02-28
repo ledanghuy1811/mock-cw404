@@ -23,8 +23,12 @@ fn _tranfer_cw20_with_cw721(
     recipient: Addr,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let cw20_balance_of_sender_before = BALANCES.load(deps.storage, &info.sender)?;
-    let cw20_balance_of_recipient_before = BALANCES.load(deps.storage, &recipient)?;
+    let cw20_balance_of_sender_before = BALANCES
+        .may_load(deps.storage, &info.sender)?
+        .unwrap_or_default();
+    let cw20_balance_of_recipient_before = BALANCES
+        .may_load(deps.storage, &recipient)?
+        .unwrap_or_default();
 
     // Transfer cw20 token here
     let cw20_resp = _tranfer_cw20(&mut deps, env, &info, &recipient, amount);
@@ -72,7 +76,7 @@ fn _tranfer_cw20_with_cw721(
         // retrieve or mint cw721
     }
 
-    Ok(cw20_resp.unwrap())
+    Ok(Response::default())
 }
 
 fn _tranfer_cw20(

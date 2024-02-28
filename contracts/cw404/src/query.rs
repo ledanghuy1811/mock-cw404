@@ -2,9 +2,9 @@ use cosmwasm_std::{Deps, StdResult};
 use cw20::BalanceResponse;
 use cw721::NumTokensResponse;
 
-use cw404_package::{MaxNftSupplyRespone, TokenInfoResponse};
+use cw404_package::{Cw721TransferExemptResponse, MaxNftSupplyRespone, TokenInfoResponse};
 
-use crate::state::{BALANCES, MAX_NFT_SUPPLY, NFT_COUNT, TOKEN_INFO};
+use crate::state::{BALANCES, CW721_TRANSFER_EXEMPT, MAX_NFT_SUPPLY, NFT_COUNT, TOKEN_INFO};
 
 pub fn query_balance(deps: Deps, address: String) -> StdResult<BalanceResponse> {
     let address = deps.api.addr_validate(&address)?;
@@ -41,4 +41,14 @@ pub fn query_max_nft_supply(deps: Deps) -> StdResult<MaxNftSupplyRespone> {
     Ok(MaxNftSupplyRespone {
         max: max_nft_supply,
     })
+}
+
+pub fn query_cw721_transfer_exempt(
+    deps: Deps,
+    address: String,
+) -> StdResult<Cw721TransferExemptResponse> {
+    let address = deps.api.addr_validate(&address)?;
+    let state = CW721_TRANSFER_EXEMPT.load(deps.storage, &address)?;
+
+    Ok(Cw721TransferExemptResponse { state })
 }

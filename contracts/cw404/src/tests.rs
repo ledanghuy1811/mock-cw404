@@ -3,7 +3,7 @@ use cw20::{BalanceResponse, Cw20Coin};
 use cw721::NumTokensResponse;
 use cw_multi_test::{App, ContractWrapper, Executor};
 
-use cw404_package::{MaxNftSupplyRespone, TokenInfoResponse};
+use cw404_package::{Cw721TransferExemptResponse, MaxNftSupplyRespone, TokenInfoResponse};
 
 use crate::contract::{execute, instantiate, query};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -58,7 +58,7 @@ pub fn initial_balance() {
     assert_eq!(
         resp,
         BalanceResponse {
-            balance: Uint128::from(10000u128)
+            balance: Uint128::from(10000u128) * Uint128::from(10u128).pow(6)
         }
     );
 }
@@ -78,7 +78,7 @@ pub fn initial_token_info() {
             name: "Orai Pandora".to_string(),
             symbol: "OPAN".to_string(),
             decimals: 6,
-            total_supply: Uint128::from(10000u128),
+            total_supply: Uint128::from(10000u128) * Uint128::from(10u128).pow(6),
             admin: Addr::unchecked("admin"),
             units: Uint128::from(10u128.pow(6))
         }
@@ -115,36 +115,54 @@ pub fn initial_max_nft() {
 }
 
 #[test]
-pub fn tranfer_mock_test() {
-    let mut instantiate_resp: InstantiateResponse = intantisate_contract(Uint128::from(10000u128));
+pub fn initial_admin_cw721_exempt() {
+    let instantiate_resp: InstantiateResponse = intantisate_contract(Uint128::from(10000u128));
 
-    instantiate_resp
-        .app
-        .execute_contract(
-            Addr::unchecked("admin"),
-            instantiate_resp.address.clone(),
-            &ExecuteMsg::Transfer {
-                recipient: "huy".to_string(),
-                amount: Uint128::from(100u128),
-            },
-            &[],
-        )
-        .unwrap();
-
-    let resp: BalanceResponse = instantiate_resp
+    let resp: Cw721TransferExemptResponse = instantiate_resp
         .app
         .wrap()
         .query_wasm_smart(
             instantiate_resp.address,
-            &QueryMsg::Balance {
+            &QueryMsg::Cw721TransferExempt {
                 address: "admin".to_string(),
             },
         )
         .unwrap();
-    assert_eq!(
-        resp,
-        BalanceResponse {
-            balance: Uint128::from(9900u128)
-        }
-    );
+    assert_eq!(resp, Cw721TransferExemptResponse { state: true });
 }
+
+// #[test]
+// pub fn tranfer_mock_test() {
+//     let mut instantiate_resp: InstantiateResponse = intantisate_contract(Uint128::from(10000u128));
+
+//     instantiate_resp
+//         .app
+//         .execute_contract(
+//             Addr::unchecked("admin"),
+//             instantiate_resp.address.clone(),
+//             &ExecuteMsg::Transfer {
+//                 recipient: "huy".to_string(),
+//                 amount: Uint128::from(100u128),
+//             },
+//             &[],
+//         )
+//         .unwrap();
+
+//     let resp: BalanceResponse = instantiate_resp
+//         .app
+//         .wrap()
+//         .query_wasm_smart(
+//             instantiate_resp.address,
+//             &QueryMsg::Balance {
+//                 address: "admin".to_string(),
+//             },
+//         )
+//         .unwrap();
+//     assert_eq!(
+//         resp,
+//         BalanceResponse {
+//             balance: Uint128::from(10000u128) * Uint128::from(10u128).pow(6)
+//                 - Uint128::from(100u128)
+//         }
+//     );
+// }

@@ -15,3 +15,8 @@ pub struct TokenInfoResponse {
 pub struct MaxNftSupplyRespone {
     pub max: Uint128
 }
+
+#[cw_serde]
+pub struct Cw721TransferExemptResponse {
+    pub state: bool
+}

@@ -3,7 +3,7 @@ use cosmwasm_std::{StdError, StdResult, Uint128};
 use cw20::{BalanceResponse, Cw20Coin};
 use cw721::NumTokensResponse;
 
-use cw404_package::{MaxNftSupplyRespone, TokenInfoResponse};
+use cw404_package::{MaxNftSupplyRespone, TokenInfoResponse, Cw721TransferExemptResponse};
 
 // instantiate msg
 #[cw_serde]
@@ -83,4 +83,7 @@ pub enum QueryMsg {
     // Max NFT supply
     #[returns(MaxNftSupplyRespone)]
     MaxNftSupply {},
+    // Cw721 transfer exempt
+    #[returns(Cw721TransferExemptResponse)]
+    Cw721TransferExempt { address: String },
 }

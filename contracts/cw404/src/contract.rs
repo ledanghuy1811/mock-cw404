@@ -8,8 +8,8 @@ use cw20::Cw20Coin;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::query::{query_balance, query_token_info, query_nft_num_token, query_max_nft_supply};
-use crate::state::{TokenInfo, BALANCES, TOKEN_INFO, NFT_COUNT, MAX_NFT_SUPPLY};
+use crate::query::{query_balance, query_token_info, query_nft_num_token, query_max_nft_supply, query_cw721_transfer_exempt};
+use crate::state::{TokenInfo, BALANCES, TOKEN_INFO, NFT_COUNT, MAX_NFT_SUPPLY, CW721_TRANSFER_EXEMPT};
 use crate::execute::execute_transfer;
 
 // version info for migration info
@@ -37,12 +37,13 @@ pub fn instantiate(
         symbol: msg.symbol,
         decimals: msg.decimals,
         total_supply,
-        admin,
+        admin: admin.clone(),
         units,
     };
     TOKEN_INFO.save(deps.storage, &data)?;
-    MAX_NFT_SUPPLY.save(deps.storage, &total_supply)?;
+    MAX_NFT_SUPPLY.save(deps.storage, &(total_supply / units))?;
     NFT_COUNT.save(deps.storage, &0)?;
+    CW721_TRANSFER_EXEMPT.save(deps.storage, &admin, &true)?;
 
     Ok(Response::default())
 }
@@ -59,7 +60,7 @@ pub fn create_accounts(
         let address = deps.api.addr_validate(&account.address)?;
         let ammout = account.amount.checked_mul(units)?;
         BALANCES.save(deps.storage, &address, &ammout)?;
-        total_supply += account.amount;
+        total_supply += ammout;
     }
 
     Ok(total_supply)
@@ -101,5 +102,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         // cw721 query
         QueryMsg::NftNumTokens {  } => to_json_binary(&query_nft_num_token(deps)?),
         QueryMsg::MaxNftSupply {  } => to_json_binary(&query_max_nft_supply(deps)?),
+        QueryMsg::Cw721TransferExempt { address } => to_json_binary(&query_cw721_transfer_exempt(deps, address)?),
     }
 }

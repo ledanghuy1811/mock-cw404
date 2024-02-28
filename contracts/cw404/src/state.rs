@@ -37,6 +37,7 @@ pub const NFT_TOKENS: IndexedMap<&str, NftInfo, NftIndexes> = IndexedMap::new("t
 
 // nft queue using deque
 pub const DEQUE_NFT: Deque<&str> = Deque::new("deque_nft");
+pub const CW721_TRANSFER_EXEMPT: Map<&Addr, bool> = Map::new("cw721_traansfer_exempt");
 
 #[derive(JsonSchema, Serialize, Deserialize, PartialEq, Clone, Debug)]
 pub struct NftInfo {
