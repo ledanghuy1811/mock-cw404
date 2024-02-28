@@ -17,6 +17,7 @@ pub struct TokenInfo {
     pub total_supply: Uint128,
     pub admin: Addr,
     pub units: Uint128,
+    pub base_token_uri: Option<String>
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
@@ -36,7 +37,7 @@ const INDEXES: NftIndexes = NftIndexes {
 pub const NFT_TOKENS: IndexedMap<&str, NftInfo, NftIndexes> = IndexedMap::new("token", INDEXES);
 
 // nft queue using deque
-pub const DEQUE_NFT: Deque<&str> = Deque::new("deque_nft");
+pub const DEQUE_NFT: Deque<Uint128> = Deque::new("deque_nft");
 pub const CW721_TRANSFER_EXEMPT: Map<&Addr, bool> = Map::new("cw721_traansfer_exempt");
 
 #[derive(JsonSchema, Serialize, Deserialize, PartialEq, Clone, Debug)]

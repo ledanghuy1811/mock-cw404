@@ -39,6 +39,7 @@ pub fn instantiate(
         total_supply,
         admin: admin.clone(),
         units,
+        base_token_uri: msg.base_token_uri
     };
     TOKEN_INFO.save(deps.storage, &data)?;
     MAX_NFT_SUPPLY.save(deps.storage, &(total_supply / units))?;

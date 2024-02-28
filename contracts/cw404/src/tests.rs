@@ -31,6 +31,7 @@ fn intantisate_contract(initial_balance_amount: Uint128) -> InstantiateResponse 
                     amount: initial_balance_amount,
                 }],
                 admin: "admin".to_string(),
+                base_token_uri: Option::Some("https://example.com/token/".to_string())
             },
             &[],
             "cw404 contract",

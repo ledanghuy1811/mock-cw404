@@ -13,6 +13,7 @@ pub struct InstantiateMsg {
     pub decimals: u8,
     pub initial_balances: Vec<Cw20Coin>,
     pub admin: String,
+    pub base_token_uri: Option<String>,
 }
 
 impl InstantiateMsg {

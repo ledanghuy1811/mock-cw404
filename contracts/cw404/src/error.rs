@@ -10,5 +10,8 @@ pub enum ContractError {
     DuplicateInitialBalanceses {},
 
     #[error("{0}")]
-    OverflowError(#[from] OverflowError)
+    OverflowError(#[from] OverflowError),
+
+    #[error("token_id already claimed")]
+    Claimed {},
 }
