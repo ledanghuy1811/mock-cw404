@@ -23,8 +23,8 @@ anyhow = {version = "1.0.75", optional = true}
 cw20 = "1.1.2"
 schemars = "0.8.16"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
-cw721 = "0.18.0"
 cw404-package = { path = "../../packages/cw404-package", version = "0.1.0" }
+cw721 = "0.18.0"
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"

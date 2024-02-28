@@ -1,6 +1,8 @@
+use std::vec;
+
 use cosmwasm_std::{Addr, Uint128};
 use cw20::{BalanceResponse, Cw20Coin};
-use cw721::NumTokensResponse;
+use cw721::{NumTokensResponse, OwnerOfResponse};
 use cw_multi_test::{App, ContractWrapper, Executor};
 
 use cw404_package::{Cw721TransferExemptResponse, MaxNftSupplyRespone, TokenInfoResponse};
@@ -31,7 +33,7 @@ fn intantisate_contract(initial_balance_amount: Uint128) -> InstantiateResponse 
                     amount: initial_balance_amount,
                 }],
                 admin: "admin".to_string(),
-                base_token_uri: Option::Some("https://example.com/token/".to_string())
+                base_token_uri: Option::Some("https://example.com/token/".to_string()),
             },
             &[],
             "cw404 contract",
@@ -132,38 +134,94 @@ pub fn initial_admin_cw721_exempt() {
     assert_eq!(resp, Cw721TransferExemptResponse { state: true });
 }
 
-// #[test]
-// pub fn tranfer_mock_test() {
-//     let mut instantiate_resp: InstantiateResponse = intantisate_contract(Uint128::from(10000u128));
+#[test]
+pub fn tranfer_test_balance() {
+    let mut instantiate_resp: InstantiateResponse = intantisate_contract(Uint128::from(10000u128));
 
-//     instantiate_resp
-//         .app
-//         .execute_contract(
-//             Addr::unchecked("admin"),
-//             instantiate_resp.address.clone(),
-//             &ExecuteMsg::Transfer {
-//                 recipient: "huy".to_string(),
-//                 amount: Uint128::from(100u128),
-//             },
-//             &[],
-//         )
-//         .unwrap();
+    instantiate_resp
+        .app
+        .execute_contract(
+            Addr::unchecked("admin"),
+            instantiate_resp.address.clone(),
+            &ExecuteMsg::Transfer {
+                recipient: "huy".to_string(),
+                amount: Uint128::from(100u128),
+            },
+            &[],
+        )
+        .unwrap();
 
-//     let resp: BalanceResponse = instantiate_resp
-//         .app
-//         .wrap()
-//         .query_wasm_smart(
-//             instantiate_resp.address,
-//             &QueryMsg::Balance {
-//                 address: "admin".to_string(),
-//             },
-//         )
-//         .unwrap();
-//     assert_eq!(
-//         resp,
-//         BalanceResponse {
-//             balance: Uint128::from(10000u128) * Uint128::from(10u128).pow(6)
-//                 - Uint128::from(100u128)
-//         }
-//     );
-// }
+    let resp: BalanceResponse = instantiate_resp
+        .app
+        .wrap()
+        .query_wasm_smart(
+            instantiate_resp.address,
+            &QueryMsg::Balance {
+                address: "admin".to_string(),
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        resp,
+        BalanceResponse {
+            balance: Uint128::from(10000u128) * Uint128::from(10u128).pow(6)
+                - Uint128::from(100u128)
+        }
+    );
+}
+
+#[test]
+pub fn tranfer_test_right_nft_owner() {
+    let mut instantiate_resp: InstantiateResponse = intantisate_contract(Uint128::from(10000u128));
+
+    instantiate_resp
+        .app
+        .execute_contract(
+            Addr::unchecked("admin"),
+            instantiate_resp.address.clone(),
+            &ExecuteMsg::Transfer {
+                recipient: "huy".to_string(),
+                amount: Uint128::from(2u128) * Uint128::from(10u128).pow(6),
+            },
+            &[],
+        )
+        .unwrap();
+
+    let mut resp: OwnerOfResponse = instantiate_resp
+        .app
+        .wrap()
+        .query_wasm_smart(
+            instantiate_resp.address.clone(),
+            &QueryMsg::OwnerOf {
+                token_id: "1".to_string(),
+                include_expired: Option::Some(true),
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        resp,
+        OwnerOfResponse {
+            owner: "huy".to_string(),
+            approvals: vec![]
+        }
+    );
+
+    resp = instantiate_resp
+        .app
+        .wrap()
+        .query_wasm_smart(
+            instantiate_resp.address,
+            &QueryMsg::OwnerOf {
+                token_id: "2".to_string(),
+                include_expired: Option::Some(true),
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        resp,
+        OwnerOfResponse {
+            owner: "huy".to_string(),
+            approvals: vec![]
+        }
+    );
+}

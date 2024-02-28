@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{StdError, StdResult, Uint128};
 use cw20::{BalanceResponse, Cw20Coin};
-use cw721::NumTokensResponse;
+use cw721::{NumTokensResponse, OwnerOfResponse};
 
 use cw404_package::{MaxNftSupplyRespone, TokenInfoResponse, Cw721TransferExemptResponse};
 
@@ -78,6 +78,13 @@ pub enum QueryMsg {
     TokenInfo {},
 
     /// Cw721 query
+    // Return the owner of the given token, error if token does not exist
+    #[returns(OwnerOfResponse)]
+    OwnerOf {
+        token_id: String,
+        /// unset or false will filter out expired approvals, you must set to true to see them
+        include_expired: Option<bool>,
+    },
     // Total number of tokens issued
     #[returns(NumTokensResponse)]
     NftNumTokens {},

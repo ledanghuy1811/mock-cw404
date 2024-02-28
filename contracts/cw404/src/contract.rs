@@ -7,10 +7,15 @@ use cw2::set_contract_version;
 use cw20::Cw20Coin;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::query::{query_balance, query_token_info, query_nft_num_token, query_max_nft_supply, query_cw721_transfer_exempt};
-use crate::state::{TokenInfo, BALANCES, TOKEN_INFO, NFT_COUNT, MAX_NFT_SUPPLY, CW721_TRANSFER_EXEMPT};
 use crate::execute::execute_transfer;
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::query::{
+    query_balance, query_cw721_transfer_exempt, query_max_nft_supply, query_nft_num_token,
+    query_owner_of, query_token_info,
+};
+use crate::state::{
+    TokenInfo, BALANCES, CW721_TRANSFER_EXEMPT, MAX_NFT_SUPPLY, NFT_COUNT, TOKEN_INFO,
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
@@ -39,7 +44,7 @@ pub fn instantiate(
         total_supply,
         admin: admin.clone(),
         units,
-        base_token_uri: msg.base_token_uri
+        base_token_uri: msg.base_token_uri,
     };
     TOKEN_INFO.save(deps.storage, &data)?;
     MAX_NFT_SUPPLY.save(deps.storage, &(total_supply / units))?;
@@ -52,7 +57,7 @@ pub fn instantiate(
 pub fn create_accounts(
     deps: &mut DepsMut,
     accounts: &[Cw20Coin],
-    units: Uint128
+    units: Uint128,
 ) -> Result<Uint128, ContractError> {
     validate_accounts(accounts)?;
 
@@ -88,21 +93,34 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Transfer { recipient, amount } => execute_transfer(deps, env, info, recipient, amount)
+        ExecuteMsg::Transfer { recipient, amount } => {
+            execute_transfer(deps, env, info, recipient, amount)
+        }
     }
 }
 
 // query contract
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         // cw20 query
         QueryMsg::Balance { address } => to_json_binary(&query_balance(deps, address)?),
         QueryMsg::TokenInfo {} => to_json_binary(&query_token_info(deps)?),
 
         // cw721 query
-        QueryMsg::NftNumTokens {  } => to_json_binary(&query_nft_num_token(deps)?),
-        QueryMsg::MaxNftSupply {  } => to_json_binary(&query_max_nft_supply(deps)?),
-        QueryMsg::Cw721TransferExempt { address } => to_json_binary(&query_cw721_transfer_exempt(deps, address)?),
+        QueryMsg::NftNumTokens {} => to_json_binary(&query_nft_num_token(deps)?),
+        QueryMsg::MaxNftSupply {} => to_json_binary(&query_max_nft_supply(deps)?),
+        QueryMsg::Cw721TransferExempt { address } => {
+            to_json_binary(&query_cw721_transfer_exempt(deps, address)?)
+        }
+        QueryMsg::OwnerOf {
+            token_id,
+            include_expired,
+        } => to_json_binary(&query_owner_of(
+            deps,
+            env,
+            token_id,
+            include_expired.unwrap_or(false),
+        )?),
     }
 }

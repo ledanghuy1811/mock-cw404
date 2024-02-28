@@ -1,10 +1,7 @@
-use std::vec;
-
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, BlockInfo, Uint128};
 use cw20::AllowanceResponse;
-use cw721::Approval;
-use cw_storage_plus::{Index, IndexList, Item, Map, MultiIndex, IndexedMap, Deque};
+use cw_storage_plus::{Deque, Index, IndexList, IndexedMap, Item, Map, MultiIndex};
 use cw_utils::Expiration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -17,7 +14,7 @@ pub struct TokenInfo {
     pub total_supply: Uint128,
     pub admin: Addr,
     pub units: Uint128,
-    pub base_token_uri: Option<String>
+    pub base_token_uri: Option<String>,
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
@@ -32,7 +29,7 @@ pub const NFT_COUNT: Item<u64> = Item::new("nft_count");
 // Stored as (granter, operator) giving operator full control over granter's account
 pub const OPERATORS: Map<(&Addr, &Addr), Expiration> = Map::new("operator");
 const INDEXES: NftIndexes = NftIndexes {
-    owner: MultiIndex::new(nft_owner_idx, "token", "token_owner")
+    owner: MultiIndex::new(nft_owner_idx, "token", "token_owner"),
 };
 pub const NFT_TOKENS: IndexedMap<&str, NftInfo, NftIndexes> = IndexedMap::new("token", INDEXES);
 
@@ -65,4 +62,18 @@ impl<'a> IndexList<NftInfo> for NftIndexes<'a> {
 
 pub fn nft_owner_idx(_pk: &[u8], d: &NftInfo) -> Addr {
     d.owner.clone()
+}
+
+#[derive(JsonSchema, Serialize, Deserialize, PartialEq, Clone, Debug)]
+pub struct Approval {
+    // Account can transfer / send nft
+    pub spender: Addr,
+    // When the Approval expires (maybe Expiration::never)
+    pub expires: Expiration,
+}
+
+impl Approval {
+    pub fn is_expired(&self, block: &BlockInfo) -> bool {
+        self.expires.is_expired(block)
+    }
 }
