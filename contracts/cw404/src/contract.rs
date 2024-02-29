@@ -7,7 +7,7 @@ use cw2::set_contract_version;
 use cw20::Cw20Coin;
 
 use crate::error::ContractError;
-use crate::execute::execute_transfer;
+use crate::execute::execute_transfer_cw20;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::query::{
     query_balance, query_cw721_transfer_exempt, query_max_nft_supply, query_nft_num_token,
@@ -94,7 +94,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Transfer { recipient, amount } => {
-            execute_transfer(deps, env, info, recipient, amount)
+            execute_transfer_cw20(deps, env, info, recipient, amount)
         }
     }
 }

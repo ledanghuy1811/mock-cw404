@@ -1,11 +1,11 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
+use cosmwasm_std::{Attribute, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
 
 use crate::error::ContractError;
 use crate::state::{
     NftInfo, BALANCES, CW721_TRANSFER_EXEMPT, DEQUE_NFT, NFT_COUNT, NFT_TOKENS, TOKEN_INFO,
 };
 
-pub fn execute_transfer(
+pub fn execute_transfer_cw20(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
@@ -26,6 +26,8 @@ fn _tranfer_cw20_with_cw721(
     amount: Uint128,
 ) -> Result<Response, ContractError> {
     let recipient_address = deps.api.addr_validate(&recipient)?;
+    // response attributes of functions
+    let mut resp_attributes: Vec<Attribute> = vec![];
 
     let cw20_balance_of_sender_before = BALANCES
         .may_load(deps.storage, &info.sender)?
@@ -36,6 +38,7 @@ fn _tranfer_cw20_with_cw721(
 
     // Transfer cw20 token here
     let cw20_resp = _tranfer_cw20(&mut deps, &info, recipient.clone(), amount)?;
+    resp_attributes.extend(cw20_resp.attributes);
 
     // cw721 transfer exempt
     let is_sender_cw721_exempt = CW721_TRANSFER_EXEMPT
@@ -60,8 +63,9 @@ fn _tranfer_cw20_with_cw721(
         // Only cares about whole number increments.
         let nft_to_retrieve_or_mint = cw20_balance_of_recipient_after / token_info.units
             - cw20_balance_of_recipient_before / token_info.units;
-        for i in 0..nft_to_retrieve_or_mint.u128() {
+        for _i in 0..nft_to_retrieve_or_mint.u128() {
             let res = _retrieve_or_mint_cw721(&mut deps, env.clone(), &info, recipient.clone())?;
+            resp_attributes.extend(res.attributes);
         }
     } else if is_recipient_cw721_exempt {
         // Case 3) The sender is not Cw721 transfer exempt, but the recipient is. Contract should attempt
@@ -115,7 +119,10 @@ fn _tranfer_cw20_with_cw721(
         }
     }
 
-    Ok(Response::default())
+    let resp = Response::new()
+        .add_attribute("action", "transfer cw20 with cw721")
+        .add_attributes(resp_attributes);
+    Ok(resp)
 }
 
 fn _tranfer_cw20(
@@ -173,7 +180,7 @@ fn _retrieve_or_mint_cw721(
     _mint_cw721(deps, info, token_id, to, token_uri)
 }
 
-pub fn _mint_cw721(
+fn _mint_cw721(
     deps: &mut DepsMut,
     info: &MessageInfo,
     token_id: Uint128,
