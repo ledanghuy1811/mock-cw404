@@ -1,9 +1,15 @@
-use cosmwasm_std::{Attribute, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
+use std::str::FromStr;
+
+use cosmwasm_std::{Attribute, DepsMut, Env, MessageInfo, Order, Response, StdResult, Uint128};
+use cw_storage_plus::Bound;
 
 use crate::error::ContractError;
 use crate::state::{
     NftInfo, BALANCES, CW721_TRANSFER_EXEMPT, DEQUE_NFT, NFT_COUNT, NFT_TOKENS, TOKEN_INFO,
 };
+
+const DEFAULT_LIMIT: u32 = 10;
+const MAX_LIMIT: u32 = 1000;
 
 pub fn execute_transfer_cw20(
     deps: DepsMut,
@@ -64,7 +70,7 @@ fn _tranfer_cw20_with_cw721(
         let nft_to_retrieve_or_mint = cw20_balance_of_recipient_after / token_info.units
             - cw20_balance_of_recipient_before / token_info.units;
         for _i in 0..nft_to_retrieve_or_mint.u128() {
-            let res = _retrieve_or_mint_cw721(&mut deps, env.clone(), &info, recipient.clone())?;
+            let res = _retrieve_or_mint_cw721(&mut deps, &info, recipient.clone())?;
             resp_attributes.extend(res.attributes);
         }
     } else if is_recipient_cw721_exempt {
@@ -72,7 +78,13 @@ fn _tranfer_cw20_with_cw721(
         //         to withdraw and store Cw721s from the sender, but the recipient should not
         //         receive Cw721s from the bank/minted.
         // Only cares about whole number increments.
-        // withdraw or store nft
+        let nft_to_withdraw_and_store = cw20_balance_of_sender_before / token_info.units
+            - cw20_balance_of_sender_after / token_info.units;
+        for _i in 0..nft_to_withdraw_and_store.u128() {
+            let res =
+                _withdraw_and_store_cw721(&mut deps, &info, info.clone().sender.into_string())?;
+            resp_attributes.extend(res.attributes);
+        }
     } else {
         // Case 4) Neither the sender nor the recipient are Cw721 transfer exempt.
         // Strategy:
@@ -156,7 +168,6 @@ fn _tranfer_cw20(
 
 fn _retrieve_or_mint_cw721(
     deps: &mut DepsMut,
-    _env: Env,
     info: &MessageInfo,
     to: String,
 ) -> Result<Response, ContractError> {
@@ -203,5 +214,48 @@ fn _mint_cw721(
         .add_attribute("minter", &info.sender)
         .add_attribute("owner", owner)
         .add_attribute("token_id", token_id);
+    Ok(resp)
+}
+
+fn _withdraw_and_store_cw721(
+    deps: &mut DepsMut,
+    info: &MessageInfo,
+    sender: String,
+) -> Result<Response, ContractError> {
+    let sender_addr = deps.api.addr_validate(&sender)?;
+    let _limit: Option<u32> = Option::None;
+    let _start: Option<String> = Option::None;
+    let limit: usize = _limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start: Option<Bound<'_, String>> = _start.map(|s| Bound::ExclusiveRaw(s.into()));
+
+    let mut nft_tokens: Vec<String> = NFT_TOKENS
+        .idx
+        .owner
+        .prefix(sender_addr)
+        .keys(deps.storage, start, None, Order::Ascending)
+        .take(limit)
+        .collect::<StdResult<Vec<_>>>()?;
+    let nft_token_id = nft_tokens.pop().unwrap();
+    let nft_token_id_u128 = nft_token_id.parse::<u128>().unwrap();
+
+    // Record the nft token in the contract's bank queue.
+    DEQUE_NFT.push_front(deps.storage, &Uint128::from(nft_token_id_u128))?;
+
+    // burn this nft
+    _burn_nft(deps, &info, nft_token_id)
+}
+
+fn _burn_nft(
+    deps: &mut DepsMut,
+    info: &MessageInfo,
+    token_id: String,
+) -> Result<Response, ContractError> {
+    NFT_TOKENS.remove(deps.storage, &token_id)?;
+
+    let resp = Response::new()
+        .add_attribute("action", "burn")
+        .add_attribute("sender", &info.sender)
+        .add_attribute("token_id", token_id);
+
     Ok(resp)
 }
